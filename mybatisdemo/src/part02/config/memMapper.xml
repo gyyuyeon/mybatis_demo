@@ -1,0 +1,141 @@
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="mem">
+
+	<select id="cnt" resultType="java.lang.Integer">
+		SELECT count(*) FROM mem
+	</select>
+
+	<select id="all" resultType="part02.dto.MemDTO">
+		SELECT * FROM mem
+		ORDER BY num
+	</select>
+	
+	<!--  insert할때 null값을 허용할때 #{컬러명,jdbcType=VARCHAR }-->
+	<insert id ="ins" parameterType ="part02.dto.MemDTO" >
+		INSERT INTO mem(name, age, loc)
+		VALUES(#{name}, #{age}, #{loc})
+	</insert>
+
+	<update id="upt" parameterType ="java.util.HashMap">
+		UPDATE mem
+		SET name=#{name}, age=#{age}, loc=#{loc}
+		WHERE num=#{num}
+	</update>
+	
+	<delete id="del" parameterType="int">
+		DELETE FROM mem
+		WHERE num=#{num}
+	</delete>
+	
+	<!-- 
+	INSERT INTO 테이블명(컬럼1, 컬럼2, 컬럼3)
+VALUES(값1,값2,값3),(값1,값2,값3)
+	 -->
+	
+	<insert id="multiIns" parameterType="java.util.List">
+		INSERT INTO mem(name, age, loc) VALUES
+		<foreach collection="list" item="element" index="no" separator=",">		
+			(#{element.name}, #{element.age}, #{element.loc})
+		</foreach>		
+	</insert>
+	
+	<!--  DELETE FROM mem WHERE num IN (10,30,40) -->
+	<delete id="multiDel" >
+		DELETE FROM mem
+		WHERE num IN(
+			<foreach collection="array" item="element" separator=",">
+				#{element}
+			</foreach>
+			)
+	</delete>
+	
+	<!--  dynamic if -->
+	<!--  mysql 문법 name LIKE concat('%' , #{name} , '%')-->
+	<!--  oracle 문법 name LIKE '%' || #{name} || '%'-->	
+	<!--  mssql 문법 name LIKE '%' + #{name} + '%'-->	
+	<select id="search" parameterType = "part02.dto.MemDTO" resultType ="part02.dto.MemDTO">
+		SELECT * FROM mem
+		<!-- <where>
+			<if test="name!=null">
+				name LIKE concat('%' , #{name} , '%') OR
+			</if>
+			
+			<if test="age!=0">
+				 age > #{age}
+			</if>
+		</where> -->
+		<!--  추가해야할것  /    제거해야할것 -->
+		<!-- prefix앞에꺼 suffix뒤에꺼 (Overrides= 제거) 슬레쉬가 아니라 수직바 -->
+		<trim prefix="where" prefixOverrides="or|and">
+			<if test="name!=null">
+				name LIKE concat('%' , #{name} , '%') 
+			</if>
+			
+			<if test="age!=0">
+				 OR age > #{age}
+			</if>
+			
+		</trim>
+	
+	</select>
+	
+	<!-- 다중 update -->
+	
+	<update id="multiUpdate" parameterType="part02.dto.MemDTO">
+		UPDATE mem
+		<set>
+			<if test="name!=null">
+				name =#{name},
+			</if>
+							
+			<if test="age!=0">
+				 age =#{age},
+			</if>
+			
+			<if test="loc!=null">
+				loc =#{loc}
+			</if>
+		</set>
+		WHERE num=#{num}
+	</update>
+	
+	<!-- choose 동적 sql (if~else) -->
+	   <insert id="insData" parameterType="part02.dto.MemDTO">
+      INSERT INTO mem(name,age,loc)
+      VALUES(#{name}, #{age},
+      <choose>
+         <when test="loc==null">
+            'test'
+         </when>
+         <otherwise> <!-- if else 에서 else부분역할 -->
+            #{loc}
+         </otherwise>
+      </choose>
+      )
+
+   </insert>
+	
+	
+<!-- 
+Mysql
+INSERT INTO 테이블명(컬럼1, 컬럼2, 컬럼3)
+ VALUES(값1, 값2, 값3), (값1, 값2, 값3), (값1, 값2, 값3)
+
+Oracle
+INSERT ALL 
+INTO 테이블명(컬럼1, 컬럼2, 컬럼3) VALUES(값1, 값2, 값3)
+INTO 테이블명(컬럼1, 컬럼2, 컬럼3) VALUES(값1, 값2, 값3)
+INTO 테이블명(컬럼1, 컬럼2, 컬럼3) VALUES(값1, 값2, 값3)
+SELECT * FROM dual
+
+Mssql
+INSERT INTO 테이블명(컬럼1, 컬럼2, 컬럼3)
+ VALUES(값1, 값2, 값3), (값1, 값2, 값3), (값1, 값2, 값3)
+
+
+ -->
+
+</mapper>
